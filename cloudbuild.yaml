@@ -1,5 +1,15 @@
+timeout: 1800s
 steps:
-- name: 'gcr.io/cloud-builders/kubectl'
+  - name: gcr.io/cloud-builders/git
+    args: ['fetch', '--unshallow']
+  ######################################################################################################################
+  # Continuous Deployment to kubernetes for Production (production tags only)
+  ######################################################################################################################
+  - name: 'gcr.io/cloud-builders/kubectl'
     entrypoint: 'bash'
     args:
-    COMMIT_SHA=$(git rev-parse --verify $TAG_NAME^{commit})
+      - '-c'
+      - |
+        set -e;
+        [[ "$TAG_NAME" =~ ^backend-v.* ]] || exit 0
+        COMMIT_SHA=$(git rev-parse --verify $TAG_NAME^{commit})
