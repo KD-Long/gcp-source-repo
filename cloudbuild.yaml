@@ -13,3 +13,25 @@ steps:
         set -e;
         [[ "$TAG_NAME" =~ ^backend-v.* ]] || exit 0
         COMMIT_SHA=$(git rev-parse --verify $TAG_NAME^{commit})
+        git fetch origin $TAG_NAME $COMMIT_SHA
+        sed -i 's/invalid/$COMMIT_SHA/g' ./kubernetes/base/kustomization.yml
+        mkdir -p ./kubernetes/build/visor-prod
+        kubectl kustomize ./kubernetes/overlays/production > "./kubernetes/build/visor-prod/$TAG_NAME.yml"
+        ls ./kubernetes/build/visor-prod/
+        cat "./kubernetes/build/visor-prod/$TAG_NAME.yml"
+        /builder/kubectl.bash get pod
+        kubectl apply --dry-run -f "./kubernetes/build/visor-prod/$TAG_NAME.yml"
+        kubectl apply -f "./kubernetes/build/visor-prod/$TAG_NAME.yml"
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=visor-prod'
+      - 'CLOUDSDK_CORE_PROJECT=visor-prod'
+
+  - name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e;
+        [[ "$TAG_NAME" =~ ^backend-v.* ]] || exit 0
+        gsutil cp "./kubernetes/build/visor-prod/$TAG_NAME.yml" "gs://visor-prod-infrastructure/kubernetes/$TAG_NAME.yml"
