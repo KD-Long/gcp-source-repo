@@ -1,4 +1,5 @@
 steps:
-- name: 'gcr.io/cloud-builders/bazel'
-- args:
-  COMMIT_SHA=$(git rev-parse --verify $TAG_NAME^{commit})
+- name: 'gcr.io/cloud-builders/kubectl'
+    entrypoint: 'bash'
+    args:
+    COMMIT_SHA=$(git rev-parse --verify $TAG_NAME^{commit})
